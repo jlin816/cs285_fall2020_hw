@@ -163,7 +163,7 @@ class RL_Trainer(object):
 
         # Use current policy to collect more data for expert to label
         print("\nCollecting data to be used for training...")
-        paths, envsteps_this_batch = sample_trajectories(
+        paths, envsteps_this_batch = utils.sample_trajectories(
             self.env,
             collect_policy,
             batch_size,
@@ -201,7 +201,6 @@ class RL_Trainer(object):
         print("\nRelabelling collected observations with labels from an expert policy...")
 
         for path in paths:
-            import pdb; pdb.set_trace()
             path["action"] = expert_policy.get_action(path["observation"])    
 
         return paths

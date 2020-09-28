@@ -3,7 +3,7 @@ import numpy as np
 from .base_agent import BaseAgent
 from cs285.policies.MLP_policy import MLPPolicyPG
 from cs285.infrastructure.replay_buffer import ReplayBuffer
-
+import cs285.infrastructure.utils as utils
 
 class PGAgent(BaseAgent):
     def __init__(self, env, agent_params):
@@ -44,9 +44,8 @@ class PGAgent(BaseAgent):
         # step 2: calculate advantages that correspond to each (s_t, a_t) point
         advantages = self.estimate_advantage(observations, q_values)
 
-        # TODO: step 3: use all datapoints (s_t, a_t, q_t, adv_t) to update the PG actor/policy
-        ## HINT: `train_log` should be returned by your actor update method
-        train_log = TODO
+        # step 3: use all datapoints (s_t, a_t, q_t, adv_t) to update the PG actor/policy
+        train_log = self.actor.update(observations, actions, advantages, q_values=q_values)
 
         return train_log
 
@@ -90,19 +89,15 @@ class PGAgent(BaseAgent):
             ## baseline was trained with standardized q_values, so ensure that the predictions
             ## have the same mean and standard deviation as the current batch of q_values
             baselines = baselines_unnormalized * np.std(q_values) + np.mean(q_values)
-            ## TODO: compute advantage estimates using q_values and baselines
-            advantages = TODO
+            advantages = q_values - baselines
 
         # Else, just set the advantage to [Q]
         else:
             advantages = q_values.copy()
-
+            
         # Normalize the resulting advantages
         if self.standardize_advantages:
-            ## TODO: standardize the advantages to have a mean of zero
-            ## and a standard deviation of one
-            ## HINT: there is a `normalize` function in `infrastructure.utils`
-            advantages = TODO
+            advantages = utils.normalize(advantages, np.mean(advantages), np.std(advantages))
 
         return advantages
 
@@ -127,25 +122,18 @@ class PGAgent(BaseAgent):
 
             Output: list where each index t contains sum_{t'=0}^T gamma^t' r_{t'}
         """
-
-        # TODO: create list_of_discounted_returns
-        # Hint: note that all entries of this output are equivalent
-            # because each sum is from 0 to T (and doesnt involve t)
-
-        return list_of_discounted_returns
+        discounted_return = sum([(self.gamma**t) * r for t, r in enumerate(rewards)])
+        return [discounted_return] * len(rewards)
 
     def _discounted_cumsum(self, rewards):
         """
             Helper function which
             -takes a list of rewards {r_0, r_1, ..., r_t', ... r_T},
-            -and returns a list where the entry in each index t' is sum_{t'=t}^T gamma^(t'-t) * r_{t'}
+            -and returns a list where the entry in each index t is sum_{t'=t}^T gamma^(t'-t) * r_{t'}
         """
 
-        # TODO: create `list_of_discounted_returns`
-        # HINT1: note that each entry of the output should now be unique,
-            # because the summation happens over [t, T] instead of [0, T]
-        # HINT2: it is possible to write a vectorized solution, but a solution
-            # using a for loop is also fine
-
-        return list_of_discounted_cumsums
-
+        discounted_returns_to_go = []
+        for t in range(len(rewards)):
+            return_to_go = sum([(self.gamma**tp) * r for tp, r in enumerate(rewards[t:])])
+            discounted_returns_to_go.append(return_to_go)
+        return discounted_returns_to_go

@@ -160,9 +160,8 @@ class RL_Trainer(object):
             envsteps_this_batch: the sum over the numbers of environment steps in paths
             train_video_paths: paths which also contain videos for visualization purposes
         """
-        # TODO(?): if your load_initial_expertdata is None, then you need to collect new trajectories at *every* iteration
-
-        if itr == 0:
+        # if your load_initial_expertdata is None, then you need to collect new trajectories at *every* iteration
+        if itr == 0 and load_initial_expertdata is not None:
             # Load expert training data
             paths = pickle.load(open(load_initial_expertdata, "rb"))
             return paths, 0, None

@@ -137,13 +137,7 @@ class MLPPolicyPG(MLPPolicy):
 
         # Maximize expectation over collected trajectories of:
         # sum_{t=0}^{T-1} [grad [log pi(a_t|s_t) * (Q_t - b_t)]]
-#        loss = -torch.sum(self.forward(observations).log_prob(actions) * advantages)
-        loss = 0 
-        for idx in range(len(actions)):
-            distr = self.forward(observations[idx])
-            log_prob_val = distr.log_prob(actions[idx])
-            loss -= log_prob_val * advantages[idx]
-        loss = loss / len(actions)
+        loss = -torch.sum(self.forward(observations).log_prob(actions) * advantages)
 
         self.optimizer.zero_grad()
         loss.backward()

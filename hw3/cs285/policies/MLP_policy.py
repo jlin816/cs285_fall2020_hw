@@ -120,7 +120,7 @@ class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
     # return more flexible objects, such as a
     # `torch.distributions.Distribution` object. It's up to you!
     def forward(self, observation: torch.FloatTensor):
-         if self.discrete:
+        if self.discrete:
             logits = self.logits_na(observation)
             action_distribution = distributions.Categorical(logits=logits)
             return action_distribution
@@ -141,6 +141,10 @@ class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
 
 class MLPPolicyAC(MLPPolicy):
     def update(self, observations, actions, adv_n=None):
-        # TODO: update the policy and return the loss
-        loss = TODO
+        # Maximize expectation over collected trajectories of:
+        # sum_{t=0}^{T-1} [grad [log pi(a_t|s_t) * adv]
+        loss = -torch.sum(self.forward(observations).log_prob(actions) * adv_n)
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
         return loss.item()

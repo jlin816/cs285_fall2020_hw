@@ -20,7 +20,9 @@ class Q_Trainer(object):
 
         env_args = get_env_kwargs(params['env_name'])
 
+        # anything specified in params will override env_args
         self.agent_params = {**train_args, **env_args, **params}
+        print(self.agent_params["target_update_freq"])
 
         self.params['agent_class'] = DQNAgent
         self.params['agent_params'] = self.agent_params
@@ -61,6 +63,7 @@ def main():
     parser.add_argument('--which_gpu', '-gpu_id', default=0)
     parser.add_argument('--scalar_log_freq', type=int, default=int(1e4))
     parser.add_argument('--video_log_freq', type=int, default=-1)
+    parser.add_argument('--target_update_freq', type=int, default=3000)
 
     parser.add_argument('--save_params', action='store_true')
 

@@ -77,18 +77,22 @@ class FFModel(nn.Module, BaseModel):
             2. `delta_pred_normalized` which is the normalized (i.e. not
                 unnormalized) output of the delta network. This is needed
         """
+        self.update_statistics(obs_mean, obs_std, acs_mean, acs_std, delta_mean, delta_std)
+        obs_unnormalized = ptu.from_numpy(obs_unnormalized)
+        acs_unnormalized = ptu.from_numpy(acs_unnormalized)
         # normalize input data to mean 0, std 1
-        obs_normalized = # TODO(Q1)
-        acs_normalized = # TODO(Q1)
+        obs_normalized = (obs_unnormalized - self.obs_mean) / self.obs_std
+        acs_normalized = (acs_unnormalized - self.acs_mean) / self.acs_std
 
-        # predicted change in obs
         concatenated_input = torch.cat([obs_normalized, acs_normalized], dim=1)
 
-        # TODO(Q1) compute delta_pred_normalized and next_obs_pred
-        # Hint: as described in the PDF, the output of the network is the
+        # compute delta_pred_normalized and next_obs_pred
+
+        # the output of the network is the
         # *normalized change* in state, i.e. normalized(s_t+1 - s_t).
-        delta_pred_normalized = # TODO(Q1)
-        next_obs_pred = # TODO(Q1)
+        delta_pred_normalized = self.delta_network(concatenated_input)
+        # unnormalize the output to get the delta
+        next_obs_pred = obs_unnormalized + (delta_pred_normalized * self.delta_std + self.delta_mean)
         return next_obs_pred, delta_pred_normalized
 
     def get_prediction(self, obs, acs, data_statistics):
@@ -105,10 +109,12 @@ class FFModel(nn.Module, BaseModel):
              - 'delta_std'
         :return: a numpy array of the predicted next-states (s_t+1)
         """
-        prediction = # TODO(Q1) get numpy array of the predicted next-states (s_t+1)
-        # Hint: `self(...)` returns a tuple, but you only need to use one of the
-        # outputs.
-        return prediction
+        prediction = self.forward(
+                obs,
+                acs,
+                **data_statistics)[0]
+
+        return ptu.to_numpy(prediction)
 
     def update(self, observations, actions, next_observations, data_statistics):
         """
@@ -125,15 +131,10 @@ class FFModel(nn.Module, BaseModel):
              - 'delta_std'
         :return:
         """
-        target = # TODO(Q1) compute the normalized target for the model.
-        # Hint: you should use `data_statistics['delta_mean']` and
-        # `data_statistics['delta_std']`, which keep track of the mean
-        # and standard deviation of the model.
-
-        loss = # TODO(Q1) compute the loss
-        # Hint: `self(...)` returns a tuple, but you only need to use one of the
-        # outputs.
-
+        target = (next_observations - observations - data_statistics["delta_mean"]) / data_statistics["delta_std"]
+        target = ptu.from_numpy(target)
+        pred_delta_normalized = self.forward(observations, actions, **data_statistics)[1]
+        loss = self.loss(target, pred_delta_normalized)
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()

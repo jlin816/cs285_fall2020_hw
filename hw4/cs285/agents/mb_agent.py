@@ -35,6 +35,9 @@ class MBAgent(BaseAgent):
         self.replay_buffer = ReplayBuffer()
 
     def train(self, ob_no, ac_na, re_n, next_ob_no, terminal_n):
+        """
+        :param obs: numpy array of shape (batch_size * self.ensemble_size)
+        """
 
         # training a MB agent refers to updating the predictive model using observed state transitions
         # NOTE: each model in the ensemble is trained on a different random batch of size batch_size
@@ -47,12 +50,13 @@ class MBAgent(BaseAgent):
             # select which datapoints to use for this model of the ensemble
             # you might find the num_data_per_env variable defined above useful
 
-            observations = # TODO(Q1)
-            actions = # TODO(Q1)
-            next_observations = # TODO(Q1)
+            observations = ob_no[i * num_data_per_ens : (i+1) * num_data_per_ens]
+            actions = ac_na[i * num_data_per_ens : (i+1) * num_data_per_ens]
+ 
+            next_observations = next_ob_no[i * num_data_per_ens : (i+1) * num_data_per_ens]
 
             # use datapoints to update one of the dyn_models
-            model =  # TODO(Q1)
+            model = self.dyn_models[i]
             log = model.update(observations, actions, next_observations,
                                 self.data_statistics)
             loss = log['Training Loss']

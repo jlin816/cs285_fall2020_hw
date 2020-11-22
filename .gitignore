@@ -1,2 +1,3 @@
 *.pyc
 data/
+**/.mypy_cache

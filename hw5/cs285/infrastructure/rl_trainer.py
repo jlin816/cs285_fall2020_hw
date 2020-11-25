@@ -395,12 +395,14 @@ class RL_Trainer(object):
         plt.clf()
         ii, jj = np.meshgrid(np.linspace(0, 1), np.linspace(0, 1))
         obs = np.stack([ii.flatten(), jj.flatten()], axis=1)
-        density = self.agent.exploration_model.forward_np(obs)
-        density = density.reshape(ii.shape)
-        plt.imshow(density[::-1])
-        plt.colorbar()
-        plt.title('RND Value')
-        self.fig.savefig(filepath('rnd_value'), bbox_inches='tight')
+
+        if self.params["agent_params"]["use_rnd"]:
+            density = self.agent.exploration_model.forward_np(obs)
+            density = density.reshape(ii.shape)
+            plt.imshow(density[::-1])
+            plt.colorbar()
+            plt.title('RND Value')
+            self.fig.savefig(filepath('rnd_value'), bbox_inches='tight')
 
         plt.clf()
         exploitation_values = self.agent.exploitation_critic.qa_values(obs).mean(-1)
@@ -417,4 +419,4 @@ class RL_Trainer(object):
         plt.colorbar()
         plt.title('Predicted Exploration Value')
         self.fig.savefig(filepath('exploration_value'), bbox_inches='tight')
-        self.fig.close()
+        plt.close()
